@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 from time import sleep
+import sys
 
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -25,25 +26,27 @@ if msg == 'WAITING':
 
 msg = my_socket.recv(1024).decode()
 
-
 turn = ''
 
 def listening():
     while True:
         global turn
         ques = my_socket.recv(1024).decode()
-        if ques == "True":
+        if ques == "Your Turn\n":
             turn = ques
-        elif ques == "False":
+        elif ques == "Other Player's Turn\n":
             turn = ques
+        elif ques == "DONE":
+            my_socket.close()
+            sys.exit(0)
         else:
-            print("\n"+ques+"\n")
+            print("\n"+ques)
 
 def sending():
     while True:
         l = input()
-        if turn == 'False':
-            print("\nNOT YOUR TURN\n")
+        if turn == "Other Player's Turn\n":
+            print("\nNOT YOUR TURN")
             continue
         else:
             my_socket.sendall(l.encode())
@@ -52,3 +55,4 @@ t1 = Thread(target=listening)
 t2 = Thread(target=sending)
 t1.start()
 t2.start()
+

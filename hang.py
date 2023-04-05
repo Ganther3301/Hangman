@@ -36,19 +36,19 @@ class Player:
     def isValid(self, guess):
         if len(guess) > 1:
             self.conn.sendall("ERR".encode())
-            self.conn.sendall("\nENTER A SINGLE LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("\nENTER A SINGLE LETTER \n".encode())
 
             return 0
 
         if not guess.isalpha():
             self.conn.sendall("ERR".encode())
-            self.conn.sendall("\nENTER A LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("\nENTER A LETTER \n".encode())
 
             return 0
 
         if guess in self.used:
             self.conn.sendall("ERR".encode())
-            self.conn.sendall("\nYOU'VE ALREADY USED THIS LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("\nYOU'VE ALREADY USED THIS LETTER \n".encode())
 
             return 0
          
@@ -82,9 +82,9 @@ def game(players, key, value):
         # player.conn.sendall("HEHE".encode())
 
         if players[0].turn == True:
-            ques = f"\n\nUsed - {' '.join(players[0].used)}\n\n{value}\n\n{players[0].hangman}\n"
+            ques = f"\nUsed - {' '.join(players[0].used)}\n{value}\n{players[0].hangman}\n"
         elif players[1].turn == True:
-            ques = f"\n\nUsed - {' '.join(players[1].used)}\n\n{value}\n\n{players[1].hangman}\n"
+            ques = f"\nUsed - {' '.join(players[1].used)}\n{value}\n{players[1].hangman}\n"
         for player in players:
             player.conn.sendall(ques.encode())
 

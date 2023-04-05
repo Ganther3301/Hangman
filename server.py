@@ -14,16 +14,16 @@ server.bind((ADDR, PORT))
 server.listen()
 
 def start():
-    while True:
+    for i in range(3):
         score = 0 
         for player in players:
             if player.turn == False:
-                player.conn.sendall("False".encode())
+                player.conn.sendall("Other Player's Turn\n".encode())
                 player.conn.sendall("Enter movie name: ".encode())
                 key = player.conn.recv(1024).decode()
                 key = key+'a'
             else:
-                player.conn.sendall("True".encode())
+                player.conn.sendall("Your Turn\n".encode())
                 score = player.score
 
         hang.game(players, key[:-1], hang.makeMovie(key[:-1]))
@@ -31,31 +31,45 @@ def start():
         if players[0].turn == True:
             if players[0].score > score:
                 for player in players:
-                    player.conn.sendall(f"{players[0].name} got a point".encode())
+                    player.conn.sendall(f"{players[0].name} got a point\n".encode())
             else:
                 for player in players:
-                    player.conn.sendall(f"{players[0].name} didn't get a point".encode())
-                    player.conn.sendall(f"Answer is {key[:-1]}".encode())
+                    player.conn.sendall(f"{players[0].name} didn't get a point\n".encode())
+                    player.conn.sendall(f"Answer is {key[:-1]}\n".encode())
             players[0].turn = False
             players[1].turn = True
 
         elif players[1].turn == True:
             if players[1].score > score:
                 for player in players:
-                    player.conn.sendall(f"{players[1].name} got a point".encode())
+                    player.conn.sendall(f"{players[1].name} got a point\n".encode())
 
             else:
                 for player in players:
-                    player.conn.sendall(f"{players[1].name} didn't get a point".encode())
-                    player.conn.sendall(f"Answer is {key[:-1]}".encode())
+                    player.conn.sendall(f"{players[1].name} didn't get a point\n".encode())
+                    player.conn.sendall(f"Answer is {key[:-1]}\n".encode())
 
             players[1].turn = False
             players[0].turn = True
 
-        sleep(5)
+        for player in players:
+            player.reset()
 
+        sleep(2)
 
+    if players[0].score > players[1].score:
+        for player in players:
+            player.conn.sendall(f'{players[0].name} has won with {players[0].score} points'.encode())
+    elif players[1].score > players[0].score:
+        for player in players:
+            player.conn.sendall(f'{players[1].name} has won with {players[1].score} points'.encode())
+    elif players[1].score == players[0].score:
+        for player in players:
+            player.conn.sendall("It's a draw".encode())
 
+    for player in players:
+        player.conn.sendall("DONE".encode())
+    server.close()
 
 while True:
     conn, addr = server.accept()
