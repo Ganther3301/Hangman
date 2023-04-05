@@ -1,10 +1,11 @@
 import socket
 import threading
+from time import sleep
 
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = socket.gethostname() # "127.0.1.1"
-port = 5001
+port = 8000
 
 try:
     my_socket.connect((host, port))
@@ -16,7 +17,7 @@ nickname = input("Choose your name : ").strip()
 while not nickname:
     nickname = input("Your name should not be empty : ").strip()
 
-my_socket.send(nickname.encode())
+my_socket.sendall(nickname.encode())
 
 msg = my_socket.recv(1024).decode()
 if msg == 'WAITING':
@@ -30,11 +31,21 @@ if msg == 'READY':
 status = my_socket.recv(1024).decode()
 
 while status == 'NDONE':
-    for i in range(2):
-        print(my_socket.recv(1024).decode())
+    msg = my_socket.recv(1024).decode()
+    print(msg)
 
-    guess = input('Enter a letter: ').lower()
-    my_socket.send(guess.encode())
+    print('Loading ', end='', flush=True)
+
+    for x in range(2):
+        for frame in r'-\|/-\|/':
+
+            print('\b', frame, sep='', end='', flush=True)
+            sleep(0.2)
+
+    print('\b ')
+
+    guess = input('Enter a letter: ')
+    my_socket.sendall(guess.encode('ascii'))
     status = my_socket.recv(1024).decode()
     if status == 'ERR':
         print(my_socket.recv(1024).decode())

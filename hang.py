@@ -1,5 +1,9 @@
 from random import randint
 from time import sleep
+from threading import Thread
+
+x = True
+guess = ''
 
 class Player:
     def __init__(self, name, conn, addr):
@@ -31,24 +35,24 @@ class Player:
     
     def isValid(self, guess):
         if len(guess) > 1:
-            self.conn.send("ERR".encode())
-            self.conn.send("\nENTER A SINGLE LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("ERR".encode())
+            self.conn.sendall("\nENTER A SINGLE LETTER DUMB BITCH\n".encode())
 
             return 0
 
         if not guess.isalpha():
-            self.conn.send("ERR".encode())
-            self.conn.send("\nENTER A LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("ERR".encode())
+            self.conn.sendall("\nENTER A LETTER DUMB BITCH\n".encode())
 
             return 0
 
         if guess in self.used:
-            self.conn.send("ERR".encode())
-            self.conn.send("\nYOU'VE ALREADY USED THIS LETTER DUMB BITCH\n".encode())
+            self.conn.sendall("ERR".encode())
+            self.conn.sendall("\nYOU'VE ALREADY USED THIS LETTER DUMB BITCH\n".encode())
 
             return 0
          
-        self.conn.send("OK".encode())
+        self.conn.sendall("OK".encode())
         return 1
     
     def reset(self):
@@ -67,21 +71,42 @@ def makeMovie(movie):
 
     return res
 
+# def listening(player):
+#     while True:
+#         global guess
+#         guess = player.conn.recv(1024).decode()
+#         print(guess)
+#         global x
+#         x = False
+
 def game(player, key, value, t):
+    # t1 = Thread(target=listening, args=(player,))
     gameFlag = True
     retMsg = ""
+    # t1.start()
 
     while(gameFlag):
-        player.conn.send(f"\nUsed - {' '.join(player.used)}\n".encode())
-        player.conn.send(f"{value}\n".encode())
-        player.conn.send(f"{player.hangman}\n".encode())
+        # player.conn.sendall(f"\nUsed - {' '.join(player.used)}\n".encode())
+        # player.conn.sendall(f"{value}\n".encode())
+        # player.conn.sendall(f"{player.hangman}\n".encode())
+        # player.conn.sendall("HEHE".encode())
+
+        ques = f"\nUsed - {' '.join(player.used)}\n{value}\n{player.hangman}\n"
+        player.conn.sendall(ques.encode())
+        guess = player.conn.recv(1024).decode()
+        print(guess)
 
         # guess = input("Enter a letter: ").lower()
         # sleep(t)
-        guess = player.conn.recv(1024).decode()
+        # global x
+        # while(x):
+        #     continue
+        # x = True
+
+        # guess = player.conn.recv(1024).decode()
 
         if(not player.isValid(guess)):
-            player.conn.send("NDONE".encode()) 
+            player.conn.sendall("NDONE".encode()) 
             continue
 
         player.used.append(guess)
@@ -91,13 +116,15 @@ def game(player, key, value, t):
         if(key == value):
             player.won = True
             gameFlag = False
+            player.conn.sendall("DONE".encode()) 
             continue
 
         if(not len(player.hangman) > 0):
             gameFlag = False
+            player.conn.sendall("DONE".encode()) 
             continue
 
-        player.conn.send("NDONE".encode()) 
+        player.conn.sendall("NDONE".encode()) 
 
 
 
