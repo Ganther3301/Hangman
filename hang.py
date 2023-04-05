@@ -7,8 +7,8 @@ guess = ''
 
 class Player:
     def __init__(self, name, conn, addr):
-        # self.score = 0
-        self.won = False
+        self.score = 0
+        self.turn = False
         self.hangman = "H A N G M A N"
         self.used = list()
         self.conn = conn
@@ -52,7 +52,6 @@ class Player:
 
             return 0
          
-        self.conn.sendall("OK".encode())
         return 1
     
     def reset(self):
@@ -71,19 +70,10 @@ def makeMovie(movie):
 
     return res
 
-# def listening(player):
-#     while True:
-#         global guess
-#         guess = player.conn.recv(1024).decode()
-#         print(guess)
-#         global x
-#         x = False
 
-def game(player, key, value, t):
-    # t1 = Thread(target=listening, args=(player,))
+def game(players, key, value):
     gameFlag = True
     retMsg = ""
-    # t1.start()
 
     while(gameFlag):
         # player.conn.sendall(f"\nUsed - {' '.join(player.used)}\n".encode())
@@ -91,22 +81,25 @@ def game(player, key, value, t):
         # player.conn.sendall(f"{player.hangman}\n".encode())
         # player.conn.sendall("HEHE".encode())
 
-        ques = f"\nUsed - {' '.join(player.used)}\n{value}\n{player.hangman}\n"
-        player.conn.sendall(ques.encode())
+        if players[0].turn == True:
+            ques = f"\n\nUsed - {' '.join(players[0].used)}\n\n{value}\n\n{players[0].hangman}\n"
+        elif players[1].turn == True:
+            ques = f"\n\nUsed - {' '.join(players[1].used)}\n\n{value}\n\n{players[1].hangman}\n"
+        for player in players:
+            player.conn.sendall(ques.encode())
+
+        if players[0].turn == True:
+            players[1].conn.sendall("\nNOT YOUR TURN\n".encode())
+            player = players[0]
+
+        elif players[1].turn == True:
+            players[0].conn.sendall("\nNOT YOUR TURN\n".encode())
+            player = players[1]
+            
         guess = player.conn.recv(1024).decode()
         print(guess)
 
-        # guess = input("Enter a letter: ").lower()
-        # sleep(t)
-        # global x
-        # while(x):
-        #     continue
-        # x = True
-
-        # guess = player.conn.recv(1024).decode()
-
         if(not player.isValid(guess)):
-            player.conn.sendall("NDONE".encode()) 
             continue
 
         player.used.append(guess)
@@ -114,18 +107,13 @@ def game(player, key, value, t):
         key, value = player.check(key, guess, value)
 
         if(key == value):
-            player.won = True
+            player.score = player.score+1
             gameFlag = False
-            player.conn.sendall("DONE".encode()) 
             continue
 
         if(not len(player.hangman) > 0):
             gameFlag = False
-            player.conn.sendall("DONE".encode()) 
             continue
-
-        player.conn.sendall("NDONE".encode()) 
-
 
 
 if __name__ == '__main__':

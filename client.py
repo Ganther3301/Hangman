@@ -1,11 +1,11 @@
 import socket
-import threading
+from threading import Thread
 from time import sleep
 
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = socket.gethostname() # "127.0.1.1"
-port = 8000
+port = 8001
 
 try:
     my_socket.connect((host, port))
@@ -25,28 +25,30 @@ if msg == 'WAITING':
 
 msg = my_socket.recv(1024).decode()
 
-if msg == 'READY':
-    print(f'{msg}')
 
-status = my_socket.recv(1024).decode()
+turn = ''
 
-while status == 'NDONE':
-    msg = my_socket.recv(1024).decode()
-    print(msg)
+def listening():
+    while True:
+        global turn
+        ques = my_socket.recv(1024).decode()
+        if ques == "True":
+            turn = ques
+        elif ques == "False":
+            turn = ques
+        else:
+            print("\n"+ques+"\n")
 
-    print('Loading ', end='', flush=True)
+def sending():
+    while True:
+        l = input()
+        if turn == 'False':
+            print("\nNOT YOUR TURN\n")
+            continue
+        else:
+            my_socket.sendall(l.encode())
 
-    for x in range(2):
-        for frame in r'-\|/-\|/':
-
-            print('\b', frame, sep='', end='', flush=True)
-            sleep(0.2)
-
-    print('\b ')
-
-    guess = input('Enter a letter: ')
-    my_socket.sendall(guess.encode('ascii'))
-    status = my_socket.recv(1024).decode()
-    if status == 'ERR':
-        print(my_socket.recv(1024).decode())
-    status = my_socket.recv(1024).decode()
+t1 = Thread(target=listening)
+t2 = Thread(target=sending)
+t1.start()
+t2.start()

@@ -2,46 +2,58 @@ from multiprocessing import Process
 # from threading import Thread
 import socket
 import hang
+from time import sleep
 from random import randint
 
 players = list()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ADDR = socket.gethostname()
-PORT = 8000 
+PORT = 8001 
 server.bind((ADDR, PORT))
 server.listen()
 
 def start():
-    for player in players:
-        player.conn.send("NDONE".encode())
+    while True:
+        score = 0 
+        for player in players:
+            if player.turn == False:
+                player.conn.sendall("False".encode())
+                player.conn.sendall("Enter movie name: ".encode())
+                key = player.conn.recv(1024).decode()
+                key = key+'a'
+            else:
+                player.conn.sendall("True".encode())
+                score = player.score
 
-    with open('movies.txt', 'r', errors='replace') as f:
-        movList = f.readlines()
-        key = movList[randint(0, len(movList))]
-        key = 'john wickk'
+        hang.game(players, key[:-1], hang.makeMovie(key[:-1]))
 
-        t1 = Process(target=hang.game, args=(players[0], key[:-1], hang.makeMovie(key[:-1]), 1))
-        t2 = Process(target=hang.game, args=(players[1], key[:-1], hang.makeMovie(key[:-1]), 2))
+        if players[0].turn == True:
+            if players[0].score > score:
+                for player in players:
+                    player.conn.sendall(f"{players[0].name} got a point".encode())
+            else:
+                for player in players:
+                    player.conn.sendall(f"{players[0].name} didn't get a point".encode())
+                    player.conn.sendall(f"Answer is {key[:-1]}".encode())
+            players[0].turn = False
+            players[1].turn = True
 
-        t1.start()
-        t2.start()
+        elif players[1].turn == True:
+            if players[1].score > score:
+                for player in players:
+                    player.conn.sendall(f"{players[1].name} got a point".encode())
 
-        t1.join()
-        t2.join()
+            else:
+                for player in players:
+                    player.conn.sendall(f"{players[1].name} didn't get a point".encode())
+                    player.conn.sendall(f"Answer is {key[:-1]}".encode())
 
-        while(t1.is_alive() and t2.is_alive()):
-            continue
+            players[1].turn = False
+            players[0].turn = True
 
-        if(players[0].won ==False and players[1].won == False):
-            t1.terminate()
-            t2.terminate()
-        elif(players[0].won and t2.is_alive()):
-            players[0].conn("win".encode())
-            t2.terminate()
-        elif(players[1].won and t1.is_alive()):
-            players[1].conn("win".encode())
-            t1.terminate()
+        sleep(5)
+
 
 
 
@@ -60,5 +72,6 @@ while True:
 
     break
 
-start()
+players[0].turn = True
 
+start()
